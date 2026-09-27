@@ -1,0 +1,8 @@
+target
+.idea
+user-service/.idea
+user-service/.gitignore
+user-service/.gitattributes
+user-service/.gradle
+user-service/build
+
