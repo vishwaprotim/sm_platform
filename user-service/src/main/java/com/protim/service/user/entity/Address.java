@@ -44,4 +44,7 @@ public class Address {
 
     Instant createdAt;
     Instant updatedAt;
+
+    Instant deletedAt;
+    boolean isDeleted;
 }

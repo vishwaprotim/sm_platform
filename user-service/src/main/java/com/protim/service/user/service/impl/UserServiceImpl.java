@@ -1,6 +1,7 @@
 package com.protim.service.user.service.impl;
 
 import com.protim.service.user.dto.AddressDto;
+import com.protim.service.user.entity.Address;
 import com.protim.service.user.enums.Status;
 import com.protim.service.user.exception.BadRequestException;
 import com.protim.service.user.exception.ResourceNotFoundException;
@@ -16,10 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -64,20 +62,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserProfileDto getUser(UUID userUUID) {
-        var userEntity = userProfileRepository.findById(userUUID)
-                .orElseThrow(
-                        () -> new ResourceNotFoundException("User not found with UUID: " + userUUID));
-
-        var addressEntity = addressRepository.findByUserUUIDAndIsPrimary(userUUID, true)
-                .orElseGet(() -> {
-                    log.warn("Primary address not found for user UUID: {}", userUUID);
-                    return null;
-                });
-        return UserProfileDto.fromEntity(userEntity, addressEntity);
-    }
-
-    @Override
     public Page<String> getUserNames(String status, Pageable pageable){
         if(status == null || status.isBlank()){
             return userProfileRepository.findAllUserNames(pageable);
@@ -91,13 +75,9 @@ public class UserServiceImpl implements UserService {
         var entity = userProfileRepository.findByUserName(userName)
                 .orElseThrow(
                         () -> new ResourceNotFoundException("User " + userName + " does not exist"));
-        var addressEntity = addressRepository.findByUserUUIDAndIsPrimary(entity.getId(), true)
-                .orElseGet(() -> {
-                    log.warn("Primary address not found for user: {}", userName);
-                    return null;
-                });
-
-        return UserProfileDto.fromEntity(entity, addressEntity);
+        return UserProfileDto.fromEntity(
+                entity,
+                addressRepository.findByUserUUIDAndIsDeletedFalseOrderByUpdatedAtDesc(entity.getId()));
     }
 
     @Override
@@ -111,7 +91,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public AddressDto addAddress(String userName, AddressDto address) {
+    public AddressDto addAddress(AddressDto address) {
+        String userName = address.getUserName();
+        if(userName == null || userName.isBlank()){
+            throw new BadRequestException("Username is required");
+        }
+
+        if(address.getIsPrimary() == null){
+            address.setIsPrimary(false);
+        }
+
         // check if user with this userName exists, else throw user not found error
         UUID userUUID = userProfileRepository.findUserUUIDByUserName(userName)
                 .orElseThrow(() -> new ResourceNotFoundException("User " + userName + " does not exist"));
@@ -126,7 +115,12 @@ public class UserServiceImpl implements UserService {
 
         var entity = address.toEntity();
         entity.setUserUUID(userUUID);
-        return AddressDto.fromEntity(addressRepository.save(entity));
+        entity.setCreatedAt(Instant.now());
+        entity.setUpdatedAt(Instant.now());
+
+        var savedDto = AddressDto.fromEntity(addressRepository.save(entity));
+        savedDto.setUserName(userName);
+        return savedDto;
     }
 
     @Override
@@ -138,7 +132,9 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("No primary address found for userUUID: " + userUUID)
         );
 
-        return AddressDto.fromEntity(entity);
+        var dto = AddressDto.fromEntity(entity);
+        dto.setUserName(userName);
+        return dto;
     }
 
     @Override
@@ -146,7 +142,79 @@ public class UserServiceImpl implements UserService {
         UUID userUUID = userProfileRepository.findUserUUIDByUserName(userName)
                 .orElseThrow(() -> new ResourceNotFoundException("User " + userName + " does not exist"));
 
-        var entities = addressRepository.findByUserUUID(userUUID);
-        return entities.stream().map(AddressDto::fromEntity).toList();
+        var entities = addressRepository.findByUserUUIDAndIsDeletedFalseOrderByUpdatedAtDesc(userUUID);
+        var dtoList = entities.stream().map(AddressDto::fromEntity).toList();
+        dtoList.forEach(item -> item.setUserName(userName));
+        return dtoList;
     }
+
+    @Override
+    public AddressDto deleteAddress(String userName, String addressId){
+        UUID userUUID = userProfileRepository.findUserUUIDByUserName(userName)
+                .orElseThrow(() -> new ResourceNotFoundException("User " + userName + " does not exist"));
+
+        var entities = addressRepository
+                .findByUserUUIDAndIsDeletedFalseOrderByUpdatedAtDesc(userUUID);
+
+        var addressToDelete = entities.stream()
+                .filter(e -> addressId.equals(e.getId().toString()))
+                .findFirst()
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Address " + addressId + " for user " + userName + " not found"));
+
+        // You cannot delete the primary address
+        if(addressToDelete.isPrimary()){
+            throw new BadRequestException("Cannot delete primary address");
+        }
+
+        addressToDelete.setDeleted(true);
+        addressToDelete.setDeletedAt(Instant.now());
+        addressRepository.save(addressToDelete);
+
+        return AddressDto.fromEntity(addressToDelete);
+    }
+
+
+    @Override
+    public AddressDto setPrimaryAddress(String userName, String addressId){
+        UUID userUUID = userProfileRepository.findUserUUIDByUserName(userName)
+                .orElseThrow(() -> new ResourceNotFoundException("User " + userName + " does not exist"));
+
+        var entities = addressRepository
+                .findByUserUUIDAndIsDeletedFalseOrderByUpdatedAtDesc(userUUID);
+
+        var addressToUpdate = entities.stream()
+                .filter(e -> addressId.equals(e.getId().toString()))
+                .findFirst()
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Address " + addressId + " for user " + userName + " not found"));
+
+        if(addressToUpdate.isPrimary()){
+            return AddressDto.fromEntity(addressToUpdate); // idempotent update
+        }
+
+        List<Address> entitiesToUpdate = new ArrayList<>();
+        // Set the existing primary address to non-primary
+        var existingPrimaryAddressSearch = entities.stream()
+                .filter(Address::isPrimary)
+                .findFirst();
+        if(existingPrimaryAddressSearch.isPresent()){
+            var existingPrimaryAddress = existingPrimaryAddressSearch.get();
+            existingPrimaryAddress.setPrimary(false);
+            existingPrimaryAddress.setUpdatedAt(Instant.now());
+            entitiesToUpdate.add(existingPrimaryAddress);
+        }
+
+        // Set this address as primary
+        addressToUpdate.setPrimary(true);
+        addressToUpdate.setUpdatedAt(Instant.now());
+        entitiesToUpdate.add(addressToUpdate);
+
+        addressRepository.saveAll(entitiesToUpdate);
+        return AddressDto.fromEntity(addressToUpdate);
+    }
+
+
 }

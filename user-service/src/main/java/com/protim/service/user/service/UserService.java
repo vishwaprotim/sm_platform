@@ -6,18 +6,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface UserService {
 
     UserProfileDto createUser(UserProfileDto user);
-    UserProfileDto getUser(UUID userUUID);
     UserProfileDto getUser(String userName);
-    Page<String> getUserNames(String status, Pageable pageable);
     UserProfileDto updateUser(UserProfileDto user);
     UserProfileDto suspendUser(String userName);
-    AddressDto addAddress(String userName, AddressDto address);
+    Page<String> getUserNames(String status, Pageable pageable);
+
+    AddressDto addAddress(AddressDto address);
+    AddressDto deleteAddress(String userName, String addressId);
     AddressDto getPrimaryAddress(String userName);
+    AddressDto setPrimaryAddress(String userName, String addressId);
     List<AddressDto> getAllAddress(String userName);
 
 }

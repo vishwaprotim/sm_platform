@@ -1,9 +1,11 @@
 package com.protim.service.user.exception;
 
+import com.protim.service.user.api.BaseResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tools.jackson.databind.exc.InvalidFormatException;
@@ -15,7 +17,7 @@ import java.time.format.DateTimeParseException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleJsonParseError(HttpMessageNotReadableException ex) {
+    public ResponseEntity<BaseResponse> handleJsonParseError(HttpMessageNotReadableException ex) {
         log.error("HttpMessageNotReadableException in user-service", ex);
         String errorMessage = "Invalid request body format.";
 
@@ -29,31 +31,43 @@ public class GlobalExceptionHandler {
         var status = HttpStatus.BAD_REQUEST;
         return ResponseEntity
                 .status(status)
-                .body(ErrorResponse.builder()
+                .body(BaseResponse.builder()
                         .status(status)
                         .message(errorMessage)
                         .build());
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex) {
+    public ResponseEntity<BaseResponse> handleBadRequestException(BadRequestException ex) {
         var status = HttpStatus.BAD_REQUEST;
         return ResponseEntity
                 .status(status)
-                .body(ErrorResponse.builder()
+                .body(BaseResponse.builder()
                         .status(status)
                         .message(ex.getMessage())
                         .build());
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<BaseResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        var status = HttpStatus.BAD_REQUEST;
+        return ResponseEntity
+                .status(status)
+                .body(BaseResponse.builder()
+                        .status(status)
+                        .message(ex.getBindingResult().getAllErrors().getFirst().getDefaultMessage())
+                        .build());
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+    public ResponseEntity<BaseResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
         var status = HttpStatus.NOT_FOUND;
         return ResponseEntity
                 .status(status)
-                .body(ErrorResponse.builder()
+                .body(BaseResponse.builder()
                         .status(status)
                         .message(ex.getMessage())
                         .build());
     }
+
 }

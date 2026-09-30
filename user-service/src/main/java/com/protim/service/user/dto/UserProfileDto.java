@@ -12,15 +12,18 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 
 @Data
+@Slf4j
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -81,6 +84,8 @@ public class UserProfileDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     Long age;
 
+    List<AddressDto> address;
+
     public UserProfile entity(){
         UserProfile userProfile = new UserProfile();
         userProfile.setId(id);
@@ -106,7 +111,7 @@ public class UserProfileDto {
         return primaryAddress.toEntity();
     }
 
-    public static UserProfileDto fromEntity(UserProfile entity, Address primaryAddress){
+    public static UserProfileDto fromEntity(UserProfile entity){
         if(entity == null){
             return null;
         }
@@ -122,7 +127,6 @@ public class UserProfileDto {
                 .contactNumber(entity.getContactNumber())
                 .email(entity.getEmail())
                 .bio(entity.getBio())
-                .primaryAddress(AddressDto.fromEntity(primaryAddress))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -132,7 +136,28 @@ public class UserProfileDto {
         return dto;
     }
 
-    // TODO - check if same password generates same hash
+    public static UserProfileDto fromEntity(UserProfile entity, Address primaryAddress){
+        if(entity == null){
+            return null;
+        }
+
+        var dto = UserProfileDto.fromEntity(entity);
+        dto.setPrimaryAddress(AddressDto.fromEntity(primaryAddress));
+        return dto;
+    }
+
+    public static UserProfileDto fromEntity(UserProfile entity, List<Address> addressEntityList){
+        if(entity == null){
+            return null;
+        }
+
+        var dto = UserProfileDto.fromEntity(entity);
+        var addressList = addressEntityList.stream().map(AddressDto::fromEntity).toList();
+        dto.setAddress(addressList);
+        return dto;
+    }
+
+    // TODO - integrate auth for all endpoints except register
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     public String encrypt(String rawPassword) {

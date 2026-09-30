@@ -23,6 +23,10 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL) // Skips all null fields for this DTO
 public class AddressDto {
 
+    // UserName is not required during registration, where this DTO is nested
+    // inside UserProfileDTO. However, this is mandatory when DTO is being used on its own
+    String userName;
+
     @NotBlank(message = "Address type cannot be empty")
     String addressType;
 
@@ -91,7 +95,6 @@ public class AddressDto {
 
         return AddressDto.builder()
                 .id(entity.getId())
-                .userUUID(entity.getUserUUID())
                 .isPrimary(entity.isPrimary())
                 .addressLine1(entity.getAddressLine1())
                 .addressLine2(entity.getAddressLine2())

@@ -1,4 +1,4 @@
-package com.protim.service.user.exception;
+package com.protim.service.user.api;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,18 +10,18 @@ import org.springframework.http.HttpStatus;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ErrorResponse {
+public class BaseResponse {
     String status;
     String message;
 
-    public ErrorResponse(HttpStatus httpStatus, String message){
+    public BaseResponse(HttpStatus httpStatus, String message){
         this.status = httpStatus.name();
         this.message = message;
     }
 
-    public static class ErrorResponseBuilder {
+    public static class BaseResponseBuilder {
         // Lombok will latch into this overridden builder method
-        public ErrorResponseBuilder status(HttpStatus httpStatus) {
+        public BaseResponseBuilder status(HttpStatus httpStatus) {
             if (httpStatus != null) {
                 this.status = httpStatus.name();
             }
