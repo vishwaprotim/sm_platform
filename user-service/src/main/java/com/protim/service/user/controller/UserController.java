@@ -35,9 +35,10 @@ public class UserController implements UserApi {
         return userService.getUserNames(status, pageable);
     }
 
-    @GetMapping("/{id}")
-    UserProfileDto getUser(@PathVariable String userUUID){
-        throw new UnsupportedOperationException("method not implemented yet");
+    @GetMapping("/{userName}")
+    @ResponseStatus(HttpStatus.OK)
+    UserProfileDto getUser(@PathVariable("userName") String userName){
+        return userService.getUser(userName);
     }
 
     @PostMapping
