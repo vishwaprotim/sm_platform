@@ -1,30 +1,48 @@
 package com.protim.service.user.entity;
 
 
+import com.protim.service.user.enums.Status;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import lombok.Data;
-
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+import lombok.Data;
+
 
 @Data
 @Entity
 public class UserProfile {
 
-    UUID id;
-    String userName; // must be unique
-    String passwordHash;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    String firstName;
-    String middleName;
-    String lastName;
+    @Column(unique = true, nullable = false)
+    private String userName;
 
-    LocalDate dateOfBirth;
-    String contactNumber;
-    String email;
-    String bio;
+    @Column(nullable = false)
+    private String passwordHash;
 
-    Instant createdAt;
-    Instant updatedAt;
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    private String firstName;
+    private String middleName;
+    private String lastName;
+
+    private LocalDate dateOfBirth;
+    private String contactNumber;
+
+    private String email;
+
+    private String bio;
+
+    private Instant createdAt;
+    private Instant updatedAt;
 }
