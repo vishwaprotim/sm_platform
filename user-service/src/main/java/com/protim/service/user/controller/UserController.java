@@ -26,6 +26,14 @@ public class UserController implements UserApi {
 
     private final UserService userService;
 
+    @Override
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserProfileDto createUser(@Valid @RequestBody UserProfileDto user){
+        return userService.createUser(user);
+    }
+
+    @Override
     @GetMapping("/ids")
     @ResponseStatus(HttpStatus.OK)
     public Page<String> getAllUserNamesByStatus(
@@ -36,18 +44,14 @@ public class UserController implements UserApi {
                 userService.getUserNames(status, pageable);
     }
 
+    @Override
     @GetMapping("/{userName}")
     @ResponseStatus(HttpStatus.OK)
     public UserProfileDto getUser(@PathVariable("userName") String userName){
         return userService.getUser(userName);
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserProfileDto createUser(@Valid @RequestBody UserProfileDto user){
-        return userService.createUser(user);
-    }
-
+    @Override
     @PatchMapping("/{userName}")
     @ResponseStatus(HttpStatus.OK)
     public UserProfileDto updateUser(
@@ -56,42 +60,49 @@ public class UserController implements UserApi {
         return userService.updateUser(userName, updateDto);
     }
 
+    @Override
     @PatchMapping("/{userName}/suspend")
     @ResponseStatus(HttpStatus.OK)
     public UserProfileDto suspendUser(@PathVariable("userName") String userName){
         return userService.updateUserStatus(userName, Status.SUSPENDED);
     }
 
+    @Override
     @PatchMapping("/{userName}/deactivate")
     @ResponseStatus(HttpStatus.OK)
     public UserProfileDto deactivateUser(@PathVariable("userName") String userName){
         return userService.updateUserStatus(userName, Status.DEACTIVATED);
     }
 
+    @Override
     @PatchMapping("/{userName}/restore")
     @ResponseStatus(HttpStatus.OK)
     public UserProfileDto restoreUser(@PathVariable("userName") String userName){
         return userService.updateUserStatus(userName, Status.ACTIVE);
     }
 
+    @Override
     @PostMapping("/address")
     @ResponseStatus(HttpStatus.CREATED)
     public AddressDto addAddress(@Valid @RequestBody AddressDto addressDto){
         return userService.addAddress(addressDto);
     }
 
+    @Override
     @GetMapping("/{userName}/address")
     @ResponseStatus(HttpStatus.OK)
     public List<AddressDto> getAddressesForUser(@PathVariable("userName") String userName){
         return userService.getAllAddress(userName);
     }
 
+    @Override
     @GetMapping("/{userName}/address/primary")
     @ResponseStatus(HttpStatus.OK)
     public AddressDto getPrimaryAddressesForUser(@PathVariable("userName") String userName){
         return userService.getPrimaryAddress(userName);
     }
 
+    @Override
     @DeleteMapping("/{userName}/address/{addressId}")
     @ResponseStatus(HttpStatus.OK)
     public BaseResponse deleteAddress(@PathVariable("userName") String userName,
@@ -103,6 +114,7 @@ public class UserController implements UserApi {
                 .build();
     }
 
+    @Override
     @PatchMapping("/{userName}/address/{addressId}/set-primary")
     public BaseResponse setPrimary(@PathVariable("userName") String userName,
                                  @PathVariable("addressId") String addressId){
