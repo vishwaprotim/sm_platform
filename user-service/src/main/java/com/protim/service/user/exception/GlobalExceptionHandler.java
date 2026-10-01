@@ -70,4 +70,15 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<BaseResponse> handleForbiddenOperationException(ForbiddenOperationException ex) {
+        var status = HttpStatus.FORBIDDEN;
+        return ResponseEntity
+                .status(status)
+                .body(BaseResponse.builder()
+                        .status(status)
+                        .message(ex.getMessage())
+                        .build());
+    }
+
 }

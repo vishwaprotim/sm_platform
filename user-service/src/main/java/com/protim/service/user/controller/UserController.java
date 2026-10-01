@@ -5,6 +5,7 @@ import com.protim.service.user.api.BaseResponse;
 import com.protim.service.user.api.UserApi;
 import com.protim.service.user.dto.AddressDto;
 import com.protim.service.user.dto.UserProfileDto;
+import com.protim.service.user.dto.UserProfileUpdateDto;
 import com.protim.service.user.enums.Status;
 import com.protim.service.user.service.UserService;
 import jakarta.validation.Valid;
@@ -45,6 +46,32 @@ public class UserController implements UserApi {
     @ResponseStatus(HttpStatus.CREATED)
     public UserProfileDto createUser(@Valid @RequestBody UserProfileDto user){
         return userService.createUser(user);
+    }
+
+    @PatchMapping("/{userName}")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDto updateUser(
+            @PathVariable("userName") String userName,
+            @Valid @RequestBody UserProfileUpdateDto updateDto){
+        return userService.updateUser(userName, updateDto);
+    }
+
+    @PatchMapping("/{userName}/suspend")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDto suspendUser(@PathVariable("userName") String userName){
+        return userService.updateUserStatus(userName, Status.SUSPENDED);
+    }
+
+    @PatchMapping("/{userName}/deactivate")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDto deactivateUser(@PathVariable("userName") String userName){
+        return userService.updateUserStatus(userName, Status.DEACTIVATED);
+    }
+
+    @PatchMapping("/{userName}/restore")
+    @ResponseStatus(HttpStatus.OK)
+    public UserProfileDto restoreUser(@PathVariable("userName") String userName){
+        return userService.updateUserStatus(userName, Status.ACTIVE);
     }
 
     @PostMapping("/address")

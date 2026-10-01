@@ -11,3 +11,5 @@
 ### TODOs
 * Caching for taken usernames
 * Unit Testing for all field level validations
+* Audits
+* Security for admin and non admin endpoints

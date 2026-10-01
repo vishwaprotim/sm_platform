@@ -2,6 +2,8 @@ package com.protim.service.user.service;
 
 import com.protim.service.user.dto.AddressDto;
 import com.protim.service.user.dto.UserProfileDto;
+import com.protim.service.user.dto.UserProfileUpdateDto;
+import com.protim.service.user.enums.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -11,8 +13,8 @@ public interface UserService {
 
     UserProfileDto createUser(UserProfileDto user);
     UserProfileDto getUser(String userName);
-    UserProfileDto updateUser(UserProfileDto user);
-    UserProfileDto suspendUser(String userName);
+    UserProfileDto updateUser(String userName, UserProfileUpdateDto updateDto);
+    UserProfileDto updateUserStatus(String userName, Status status);
     Page<String> getUserNames(String status, Pageable pageable);
 
     AddressDto addAddress(AddressDto address);

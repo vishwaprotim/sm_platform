@@ -1,9 +1,11 @@
 package com.protim.service.user.service.impl;
 
 import com.protim.service.user.dto.AddressDto;
+import com.protim.service.user.dto.UserProfileUpdateDto;
 import com.protim.service.user.entity.Address;
 import com.protim.service.user.enums.Status;
 import com.protim.service.user.exception.BadRequestException;
+import com.protim.service.user.exception.ForbiddenOperationException;
 import com.protim.service.user.exception.ResourceNotFoundException;
 import com.protim.service.user.dto.UserProfileDto;
 import com.protim.service.user.repository.AddressRepository;
@@ -81,13 +83,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserProfileDto updateUser(UserProfileDto user) {
-        throw new UnsupportedOperationException("Method not implemented yet!");
+    public UserProfileDto updateUser(String userName, UserProfileUpdateDto updateDto) {
+        var entity = userProfileRepository.findByUserName(userName)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "User " + userName + " does not exist"));
+        if(!entity.getStatus().equals(Status.ACTIVE)){
+            throw new ForbiddenOperationException("User " + userName + " is not active");
+        }
+
+        if(updateDto.hasUpdates()){ // idempotent update
+            updateDto.applyPatchToEntity(entity);
+            userProfileRepository.save(entity);
+        }
+        return UserProfileDto.fromEntity(entity);
     }
 
     @Override
-    public UserProfileDto suspendUser(String userName) {
-        throw new UnsupportedOperationException("Method not implemented yet!");
+    public UserProfileDto updateUserStatus(String userName, Status status) {
+        var entity = userProfileRepository.findByUserName(userName)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "User " + userName + " does not exist"));
+
+        if(!entity.getStatus().equals(status)){ // idempotent update
+            entity.setStatus(status);
+            entity.setUpdatedAt(Instant.now());
+            userProfileRepository.save(entity);
+        }
+        return UserProfileDto.fromEntity(entity);
     }
 
     @Override
